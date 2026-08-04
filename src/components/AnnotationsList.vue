@@ -27,15 +27,31 @@ watch(
 
 const visible = computed(() => props.annotations.slice(0, visibleCount.value));
 
+// The sentinel only exists in the DOM once loading is false (it's behind the
+// v-else below), so it isn't there yet when onMounted runs the first time -
+// and it unmounts/remounts as a new element each time loading toggles back
+// off (e.g. after a filter change). Watching the ref (rather than observing
+// once in onMounted) re-attaches to whichever element is current. The
+// observer's root is the scrollable list itself, not the page viewport -
+// this component doesn't own how tall its host renders it.
+const root = ref<HTMLElement | null>(null);
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 onMounted(() => {
-  observer = new IntersectionObserver((entries) => {
-    if (entries[0]?.isIntersecting && visibleCount.value < props.annotations.length) {
-      visibleCount.value += BATCH;
-    }
-  });
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting && visibleCount.value < props.annotations.length) {
+        visibleCount.value += BATCH;
+      }
+    },
+    { root: root.value },
+  );
   if (sentinel.value) observer.observe(sentinel.value);
+});
+watch(sentinel, (el, oldEl) => {
+  if (!observer) return;
+  if (oldEl) observer.unobserve(oldEl);
+  if (el) observer.observe(el);
 });
 onBeforeUnmount(() => observer?.disconnect());
 
@@ -46,7 +62,7 @@ const labelColor = (label: string) => props.labels.find((l) => l.name === label)
 </script>
 
 <template>
-  <div id="iaa-annotations-list" class="ann-list">
+  <div id="iaa-annotations-list" ref="root" class="ann-list">
     <div v-if="loading" class="ann-list__loading">
       <Spinner />
     </div>
