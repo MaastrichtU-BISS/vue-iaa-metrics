@@ -35,7 +35,6 @@ const {
   granularity,
   isDocumentLevel,
   annotations,
-  loadingAnnotations,
   metricsModalVisible,
   metricsResult,
   computingMetrics,
@@ -74,7 +73,7 @@ onMounted(() => init());
         <AnnotationsList
           :annotations="annotations"
           :labels="labelsOptions"
-          :loading="loadingAnnotations || loading"
+          :loading="loading && !downloading"
           :document-level="isDocumentLevel"
           @open-document="(doc) => emit('open-document', doc)"
         />
