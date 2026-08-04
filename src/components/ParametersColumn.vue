@@ -3,6 +3,7 @@ import { computed } from "vue";
 import type { DocumentOption, LabelOption } from "../types";
 import FilterSelect from "./FilterSelect.vue";
 import Toggle from "./Toggle.vue";
+import InfoTooltip from "./InfoTooltip.vue";
 
 const props = defineProps<{
   labelsOptions: LabelOption[];
@@ -49,11 +50,11 @@ const wordToggle = computed({
     <section>
       <h4 class="params__title">
         Filter
-        <span
-          class="params__info"
-          title="Only changes which annotations are shown in the list. Metric computation always uses all labels, documents, and annotators."
-          >ⓘ</span
-        >
+        <InfoTooltip
+          placement="bottom"
+          align="start"
+          text="Only changes which annotations are shown in the list. Metric computation always uses all labels, documents, and annotators."
+        />
       </h4>
       <div class="params__field">
         <label class="params__label">Label(s)</label>
@@ -79,21 +80,17 @@ const wordToggle = computed({
           <span class="params__toggle-label params__toggle-label--right">Character</span>
           <Toggle v-model="wordToggle" />
           <span class="params__toggle-label">Word</span>
-          <span
-            class="params__info"
-            title="Coverage agreement (Krippendorff / Cohen's kappa) is computed over character or word units of the document text."
-            >ⓘ</span
-          >
+          <InfoTooltip
+            text="Coverage agreement (Krippendorff / Cohen's kappa) is computed over character or word units of the document text."
+          />
         </div>
         <div class="params__toggle-row">
           <span class="params__toggle-label params__toggle-label--right">Exact</span>
           <Toggle v-model="containedToggle" />
           <span class="params__toggle-label">Contained</span>
-          <span
-            class="params__info"
-            title="With 'Exact', span matching requires identical start/end offsets. With 'Contained', one span being fully inside the other counts as a match."
-            >ⓘ</span
-          >
+          <InfoTooltip
+            text="With 'Exact', span matching requires identical start/end offsets. With 'Contained', one span being fully inside the other counts as a match."
+          />
         </div>
       </div>
 
@@ -134,11 +131,6 @@ const wordToggle = computed({
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--iaa-muted, #6b7280);
-}
-.params__info {
-  cursor: help;
-  color: var(--iaa-muted, #6b7280);
-  font-size: 0.8rem;
 }
 .params__field {
   margin-bottom: 0.6rem;
