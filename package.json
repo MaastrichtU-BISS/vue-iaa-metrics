@@ -14,7 +14,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/vue-iaa-metrics.js",
       "require": "./dist/vue-iaa-metrics.umd.cjs"
-    }
+    },
+    "./style.css": "./dist/vue-iaa-metrics.css"
   },
   "scripts": {
     "dev": "vite",

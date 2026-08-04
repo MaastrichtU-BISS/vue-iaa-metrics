@@ -33,6 +33,7 @@ single delegate interface the host implements: `MetricsSource`.
 ```vue
 <script setup lang="ts">
 import { MetricsPage, type MetricsSource } from "vue-iaa-metrics";
+import "vue-iaa-metrics/style.css";
 
 const source: MetricsSource = {
   /* see contract below */
