@@ -94,6 +94,11 @@ const labelColor = (label: string) => props.labels.find((l) => l.name === label)
   height: 100%;
   overflow-y: auto;
   padding: 0.75rem;
+  /* The padding has to come out of the 100%, not be added to it. Without this
+     the list stands 1.5rem taller than the cell holding it, and a host that
+     bounds this component gets a second scrollbar outside the one here — which
+     scrolls the sidebar and its buttons off the screen. */
+  box-sizing: border-box;
 }
 .ann-list__loading {
   display: flex;
