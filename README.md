@@ -15,12 +15,13 @@ Given a set of documents that one or more annotators have labelled (spans of
 text, or whole-document tags) plus a per-item confidence rating, this package:
 
 - Lets a user filter and browse the raw annotations, grouped by document.
-- Sends the whole task to an external **IAA service** (the Go tool in
+- Sends the task — narrowed to the selected labels, documents and annotators,
+  if any are selected — to an external **IAA service** (the Go tool in
   [`lawnotation-iaa`](../lawnotation-iaa)) to compute agreement metrics —
   span-matching precision/recall/F1 and coverage agreement (Krippendorff's α,
   Cohen's κ) — and displays the results.
-- Lets the user download the full report as a ZIP, optionally anonymizing
-  annotator identifiers first.
+- Lets the user download the report for the same selection as a ZIP,
+  optionally anonymizing annotator identifiers first.
 
 It does **not** talk to any backend directly. Everything — fetching filter
 options, fetching annotations, and calling the IAA service — goes through a
@@ -91,6 +92,19 @@ interface MetricsSource {
   session; also where `annotation_level` is read to decide whether to show
   the span-matching criterion/granularity toggles (hidden for document-level
   tasks).
+
+  The package applies the selected filters to this input itself before
+  calling `computeMetrics`/`downloadReport` (see `subsetIaaInput`), so those
+  receive only the selected subset. For that to work:
+  - each document's `id` must be the same value as its `DocumentOption.value`
+    — without ids, selecting a document filter reports an error instead of
+    computing;
+  - each assignment's `annotator` must be the same string `getAnnotators`
+    returns, and each annotation's `label` the same name `getLabels` returns.
+
+  Selections that can't produce meaningful metrics — no matching documents,
+  or fewer than two annotators left (when the task has at least two) — are
+  reported through the `error` event without calling the service.
 - **`computeMetrics` / `downloadReport`** — **host-implemented on purpose.**
   The IAA Go service has no CORS or auth handling (see its own README), so
   it's never meant to be called directly from a browser. Hosts proxy it
@@ -105,6 +119,7 @@ interface MetricsSource {
   "labelset": { "labels": [{ "name": "Actors" }] },
   "documents": [
     {
+      "id": "1",
       "name": "doc_001.txt",
       "full_text": "The full document text.",
       "assignments": [
@@ -121,7 +136,8 @@ interface MetricsSource {
 ```
 
 `annotation_level` is omitted for span-level tasks; `"document"` for
-whole-document tagging (no `start`/`end`, one annotation per label).
+whole-document tagging (no `start`/`end`, one annotation per label). `id` is
+only used by the package, for the document filter; the IAA service ignores it.
 
 ### `IaaMetricsResponse` (the IAA service's output schema)
 
@@ -164,5 +180,6 @@ go run main.go iaa.go server.go --serve --port 8080
 ```
 
 ```bash
+pnpm test     # unit tests (vitest)
 pnpm build    # type-checks (vue-tsc) then builds dist/ in library mode
 ```
