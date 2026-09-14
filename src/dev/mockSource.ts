@@ -91,6 +91,7 @@ export const mockSource: MetricsSource = {
     return {
       labelset: { labels: labelset.map((l) => ({ name: l.name })) },
       documents: documents.map((doc) => ({
+        id: doc.id,
         name: doc.name,
         full_text: doc.full_text,
         assignments: doc.assignments.map((ass) => ({

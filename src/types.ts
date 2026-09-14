@@ -16,6 +16,13 @@ export type IaaAssignment = {
 };
 
 export type IaaDocument = {
+  /**
+   * The host's document id — the same value as the matching
+   * `DocumentOption.value`. Lets the package apply the document filter to
+   * the IAA input; the Go service ignores it. Required once a document
+   * filter is selected.
+   */
+  id?: string;
   name: string;
   full_text: string;
   assignments: IaaAssignment[];
