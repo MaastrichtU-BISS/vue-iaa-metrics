@@ -11,6 +11,8 @@ const props = defineProps<{
   annotatorsOptions: string[];
   /** Document-level tasks have no span text, so span-matching params don't apply. */
   documentLevel: boolean;
+  /** Whether any filter is selected, i.e. metrics cover a subset of the task. */
+  hasFilters: boolean;
   computingMetrics: boolean;
   downloading: boolean;
 }>();
@@ -53,7 +55,7 @@ const wordToggle = computed({
         <InfoTooltip
           placement="bottom"
           align="start"
-          text="Only changes which annotations are shown in the list. Metric computation always uses all labels, documents, and annotators."
+          text="Applies to both the annotation list and the computed metrics and report. Leave a filter empty to include everything."
         />
       </h4>
       <div class="params__field">
@@ -108,7 +110,7 @@ const wordToggle = computed({
         :disabled="downloading"
         @click="emit('download-all')"
       >
-        Download All
+        {{ hasFilters ? "Download Filtered" : "Download All" }}
       </button>
     </section>
   </div>

@@ -8,7 +8,7 @@ import ResultsModal from "./ResultsModal.vue";
 import ConfirmModal from "./ConfirmModal.vue";
 import Spinner from "./Spinner.vue";
 
-// Host-facing entry point: filters + Compute Metrics / Download All on the
+// Host-facing entry point: filters + Compute Metrics / Download on the
 // left, the browsable filtered annotation list on the right. All data flows
 // through the given MetricsSource; this component owns no persistence or
 // network logic itself.
@@ -31,6 +31,7 @@ const {
   selectedLabels,
   selectedDocuments,
   selectedAnnotators,
+  hasFilters,
   criterion,
   granularity,
   isDocumentLevel,
@@ -63,6 +64,7 @@ onMounted(() => init());
           :documents-options="documentsOptions"
           :annotators-options="annotatorsOptions"
           :document-level="isDocumentLevel"
+          :has-filters="hasFilters"
           :computing-metrics="computingMetrics"
           :downloading="downloading"
           @compute-metrics="computeMetrics"

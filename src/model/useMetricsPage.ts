@@ -6,8 +6,9 @@ import type {
   LabelOption,
   RichAnnotation,
 } from "../types";
-import type { IaaParams, MetricsSource } from "./source";
+import type { AnnotationFilters, IaaParams, MetricsSource } from "./source";
 import { anonymizeAnnotators } from "./anonymize";
+import { subsetIaaInput, subsetProblem } from "./subset";
 import { saveBlob } from "./saveBlob";
 
 /**
@@ -43,16 +44,21 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     granularity: granularity.value,
   }));
 
+  const filters = computed<AnnotationFilters>(() => ({
+    labels: selectedLabels.value,
+    documents: selectedDocuments.value,
+    annotators: selectedAnnotators.value,
+  }));
+  const hasFilters = computed(
+    () => filters.value.labels.length + filters.value.documents.length + filters.value.annotators.length > 0,
+  );
+
   const annotations = ref<RichAnnotation[]>([]);
 
   async function refreshAnnotations() {
     loadingAnnotations.value = true;
     try {
-      annotations.value = await source.getAnnotations({
-        labels: selectedLabels.value,
-        documents: selectedDocuments.value,
-        annotators: selectedAnnotators.value,
-      });
+      annotations.value = await source.getAnnotations(filters.value);
     } catch (error) {
       onError(`Failed to load annotations: ${error}`);
     } finally {
@@ -62,23 +68,43 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
 
   watch([selectedLabels, selectedDocuments, selectedAnnotators], refreshAnnotations);
 
-  // Compute Metrics / Download All always analyze the whole task - they
-  // ignore the filters above, which only affect what's browsable in the
-  // list. Fetched once on init (needed up front to know whether this is a
-  // document-level task, for the granularity/criterion toggles) and reused
-  // for the rest of the session.
+  // The whole-task IAA input. Fetched once on init (needed up front to know
+  // whether this is a document-level task, for the granularity/criterion
+  // toggles) and reused for the rest of the session.
   const iaaInput = ref<IaaInputData>();
   const isDocumentLevel = computed(() => iaaInput.value?.annotation_level === "document");
+
+  // Compute Metrics / Download apply the same filters as the list: the
+  // cached input is narrowed in the browser, so the IAA service only ever
+  // receives - and computes over - the selected subset. Reports a subset
+  // that can't be computed through onError and returns undefined.
+  function filteredInput(): IaaInputData | undefined {
+    if (!iaaInput.value) return undefined;
+    let subset: IaaInputData;
+    try {
+      subset = subsetIaaInput(iaaInput.value, filters.value);
+    } catch (error) {
+      onError(`Failed to apply filters: ${error}`);
+      return undefined;
+    }
+    const problem = subsetProblem(iaaInput.value, subset);
+    if (problem) {
+      onError(problem);
+      return undefined;
+    }
+    return subset;
+  }
 
   const metricsModalVisible = ref(false);
   const metricsResult = ref<IaaMetricsResponse>();
 
   async function computeMetrics() {
-    if (!iaaInput.value) return;
+    const input = filteredInput();
+    if (!input) return;
     metricsModalVisible.value = true;
     computingMetrics.value = true;
     try {
-      metricsResult.value = await source.computeMetrics(iaaInput.value, iaaParams.value);
+      metricsResult.value = await source.computeMetrics(input, iaaParams.value);
     } catch (error) {
       onError(`Failed to compute metrics: ${error}`);
       metricsModalVisible.value = false;
@@ -99,7 +125,8 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
   }
 
   async function downloadReport(filename = "iaa_report.zip") {
-    if (!iaaInput.value) return;
+    const filtered = filteredInput();
+    if (!filtered) return;
     anonymizeConfirmVisible.value = true;
     const anonymize = await new Promise<boolean | undefined>((resolve) => {
       resolveAnonymizeChoice = resolve;
@@ -108,7 +135,7 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
 
     downloading.value = true;
     try {
-      const input = anonymize ? anonymizeAnnotators(iaaInput.value) : iaaInput.value;
+      const input = anonymize ? anonymizeAnnotators(filtered) : filtered;
       const blob = await source.downloadReport(input, iaaParams.value);
       saveBlob(blob, filename);
     } catch (error) {
@@ -147,6 +174,7 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     selectedLabels,
     selectedDocuments,
     selectedAnnotators,
+    hasFilters,
     criterion,
     granularity,
     isDocumentLevel,
