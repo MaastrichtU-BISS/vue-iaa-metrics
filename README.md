@@ -176,7 +176,7 @@ computation:
 
 ```bash
 cd ../lawnotation-iaa
-go run main.go iaa.go server.go --serve --port 8080
+go run . --serve --port 8080
 ```
 
 ```bash

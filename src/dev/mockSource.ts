@@ -48,7 +48,7 @@ async function callIaa(path: string, input: IaaInputData, params: IaaParams): Pr
   } catch {
     throw new Error(
       `Could not reach the IAA service at ${IAA_BASE_URL}. Run it locally from lawnotation-iaa: ` +
-        `go run main.go iaa.go server.go --serve --port 8080`,
+        `go run . --serve --port 8080`,
     );
   }
   if (!response.ok) {
