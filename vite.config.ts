@@ -9,14 +9,14 @@ export default defineConfig({
   plugins: [
     vue(),
     // Emits one .d.ts per source file into dist/, mirroring src/index.ts's
-    // exports — scoped to `src` minus `src/dev`, so the dev harness's types
+    // exports — scoped to `src` minus `src/dev` and tests, so their types
     // never leak into the published package. (Not rollupTypes: true — that
     // option goes through @microsoft/api-extractor, which silently drops
     // declarations for .vue SFCs, breaking MetricsPage's published types
     // entirely.)
     dts({
       include: ["src"],
-      exclude: ["src/dev/**"],
+      exclude: ["src/dev/**", "src/**/*.test.ts"],
       tsconfigPath: resolve(__dirname, "tsconfig.json"),
       // Its own .vue auto-detection only checks include-glob strings for a
       // literal ".vue" substring plus a shallow root-dir scan — neither
