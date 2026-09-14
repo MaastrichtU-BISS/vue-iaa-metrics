@@ -1,19 +1,34 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import type { IaaMetricsResponse, LabelOption } from "../types";
+import type { SubsetScope } from "../model/subset";
 import ResultsAgreement from "./ResultsAgreement.vue";
 import ResultsConfidence from "./ResultsConfidence.vue";
 import Spinner from "./Spinner.vue";
 
 const visible = defineModel<boolean>("visible", { required: true });
 
-defineProps<{
+const props = defineProps<{
   metricResults: IaaMetricsResponse | undefined;
+  /** What the results cover when filtered; omitted for the whole task. */
+  scope?: SubsetScope;
   labelsOptions: LabelOption[];
   loading: boolean;
 }>();
 
 const activeTab = ref<"agreement" | "confidence">("agreement");
+
+const scopeText = computed(() => {
+  const s = props.scope;
+  if (!s) return "";
+  const part = (count: { selected: number; total: number }, noun: string) =>
+    `${count.selected} of ${count.total} ${noun}`;
+  return [
+    part(s.documents, "documents"),
+    part(s.annotators, "annotators"),
+    part(s.labels, "labels"),
+  ].join(" · ");
+});
 </script>
 
 <template>
@@ -28,6 +43,7 @@ const activeTab = ref<"agreement" | "confidence">("agreement");
         <Spinner :size="48" />
       </div>
       <template v-else>
+        <p v-if="scopeText" class="results-modal__scope">Filtered: {{ scopeText }}</p>
         <div class="results-modal__tabs" role="tablist">
           <button
             type="button"
@@ -106,6 +122,14 @@ const activeTab = ref<"agreement" | "confidence">("agreement");
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.results-modal__scope {
+  margin: 0;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--iaa-muted, #6b7280);
+  background: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid var(--iaa-border, rgba(0, 0, 0, 0.15));
 }
 .results-modal__tabs {
   display: flex;

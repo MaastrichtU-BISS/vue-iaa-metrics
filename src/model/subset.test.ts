@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { IaaAssignment, IaaInputData } from "../types";
-import { subsetIaaInput, subsetProblem } from "./subset";
+import { subsetIaaInput, subsetProblem, subsetScope } from "./subset";
 
 const none = { labels: [], documents: [], annotators: [] };
 
@@ -127,5 +127,17 @@ describe("subsetProblem", () => {
       documents: [{ id: "1", name: "d1", full_text: "x", assignments: [assignment("alice", ["A"])] }],
     };
     expect(subsetProblem(full, subsetIaaInput(full, none))).toBeUndefined();
+  });
+});
+
+describe("subsetScope", () => {
+  it("counts selected against total documents, annotators and labels", () => {
+    const full = task();
+    const subset = subsetIaaInput(full, { labels: ["B"], documents: ["2", "3"], annotators: ["carol", "bob"] });
+    expect(subsetScope(full, subset)).toEqual({
+      documents: { selected: 2, total: 3 },
+      annotators: { selected: 2, total: 3 },
+      labels: { selected: 1, total: 3 },
+    });
   });
 });

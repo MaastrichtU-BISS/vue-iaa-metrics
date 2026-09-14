@@ -8,7 +8,7 @@ import type {
 } from "../types";
 import type { AnnotationFilters, IaaParams, MetricsSource } from "./source";
 import { anonymizeAnnotators } from "./anonymize";
-import { subsetIaaInput, subsetProblem } from "./subset";
+import { subsetIaaInput, subsetProblem, subsetScope, type SubsetScope } from "./subset";
 import { saveBlob } from "./saveBlob";
 
 /**
@@ -97,10 +97,13 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
 
   const metricsModalVisible = ref(false);
   const metricsResult = ref<IaaMetricsResponse>();
+  // What the displayed results cover; undefined when they cover the whole task.
+  const metricsScope = ref<SubsetScope>();
 
   async function computeMetrics() {
     const input = filteredInput();
     if (!input) return;
+    metricsScope.value = hasFilters.value ? subsetScope(iaaInput.value!, input) : undefined;
     metricsModalVisible.value = true;
     computingMetrics.value = true;
     try {
@@ -182,6 +185,7 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     loadingAnnotations,
     metricsModalVisible,
     metricsResult,
+    metricsScope,
     computingMetrics,
     computeMetrics,
     anonymizeConfirmVisible,

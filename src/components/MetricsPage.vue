@@ -38,6 +38,7 @@ const {
   annotations,
   metricsModalVisible,
   metricsResult,
+  metricsScope,
   computingMetrics,
   computeMetrics,
   anonymizeConfirmVisible,
@@ -88,6 +89,7 @@ onMounted(() => init());
     <ResultsModal
       v-model:visible="metricsModalVisible"
       :metric-results="metricsResult"
+      :scope="metricsScope"
       :labels-options="labelsOptions"
       :loading="computingMetrics"
     />

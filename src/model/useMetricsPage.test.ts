@@ -62,6 +62,7 @@ describe("useMetricsPage filtering", () => {
     expect(ctx.page.hasFilters.value).toBe(false);
     await ctx.page.computeMetrics();
     expect(ctx.computed).toEqual([task()]);
+    expect(ctx.page.metricsScope.value).toBeUndefined();
   });
 
   it("sends only the filtered subset to computeMetrics", async () => {
@@ -75,6 +76,11 @@ describe("useMetricsPage filtering", () => {
     expect(input.labelset.labels).toEqual([{ name: "A" }]);
     expect(ctx.errors).toEqual([]);
     expect(ctx.page.metricsModalVisible.value).toBe(true);
+    expect(ctx.page.metricsScope.value).toEqual({
+      documents: { selected: 2, total: 3 },
+      annotators: { selected: 2, total: 3 },
+      labels: { selected: 1, total: 2 },
+    });
   });
 
   it("does not call the service, and reports why, when the subset can't be computed", async () => {

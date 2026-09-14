@@ -75,3 +75,18 @@ export function subsetProblem(full: IaaInputData, subset: IaaInputData): string 
   }
   return undefined;
 }
+
+export type SubsetScope = {
+  documents: { selected: number; total: number };
+  annotators: { selected: number; total: number };
+  labels: { selected: number; total: number };
+};
+
+/** How much of the whole task a subset covers, for display alongside results. */
+export function subsetScope(full: IaaInputData, subset: IaaInputData): SubsetScope {
+  return {
+    documents: { selected: subset.documents.length, total: full.documents.length },
+    annotators: { selected: countAnnotators(subset), total: countAnnotators(full) },
+    labels: { selected: subset.labelset.labels.length, total: full.labelset.labels.length },
+  };
+}
