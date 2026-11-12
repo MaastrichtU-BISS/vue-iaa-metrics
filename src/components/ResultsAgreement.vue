@@ -12,8 +12,12 @@ const props = defineProps<{
 // Hybrid reports carry two sets of results: span labels and whole-document
 // labels. Only one is shown at a time.
 const group = ref<"span" | "document">("span");
-const hasDocumentGroup = computed(() => !!props.report?.per_document_label);
-const isDocumentGroup = computed(() => group.value === "document" && hasDocumentGroup.value);
+// A group with no labels (its filter was set to "None") has nothing to show.
+const hasDocumentGroup = computed(() => Object.keys(props.report?.per_document_label ?? {}).length > 0);
+const hasSpanGroup = computed(() => Object.keys(props.report?.per_label ?? {}).length > 0);
+const isDocumentGroup = computed(
+  () => hasDocumentGroup.value && (group.value === "document" || !hasSpanGroup.value),
+);
 const results = computed(() =>
   isDocumentGroup.value ? props.report?.per_document_label : props.report?.per_label,
 );
@@ -56,7 +60,7 @@ const formatOtherAnnotator = (pair: string, direction: string): string => {
   <div v-if="!loading" class="results-agreement">
     <div v-if="!labels.length" class="results-agreement__empty">No metrics computed yet.</div>
     <template v-else>
-      <div v-if="hasDocumentGroup" class="results-agreement__groups" role="tablist">
+      <div v-if="hasDocumentGroup && hasSpanGroup" class="results-agreement__groups" role="tablist">
         <button
           type="button"
           role="tab"

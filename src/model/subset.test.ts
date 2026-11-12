@@ -181,6 +181,37 @@ describe("hybrid tasks", () => {
     expect(subsetIaaInput(input, none)).toEqual(input);
   });
 
+  it('"None" for span labels leaves only the document annotations', () => {
+    const out = subsetIaaInput(hybrid(), { ...none, noSpanLabels: true });
+    expect(out.labelset.labels).toEqual([]);
+    expect(out.document_labelset!.labels).toHaveLength(2);
+    for (const a of out.documents[0].assignments) {
+      expect(a.annotations).toEqual([]);
+      expect(a.document_annotations!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('"None" for document labels leaves only the span annotations', () => {
+    const out = subsetIaaInput(hybrid(), { ...none, noDocumentLabels: true });
+    expect(out.document_labelset!.labels).toEqual([]);
+    expect(out.labelset.labels).toHaveLength(2);
+    for (const a of out.documents[0].assignments) {
+      expect(a.document_annotations).toEqual([]);
+      expect(a.annotations.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("None wins over selected labels of the same kind", () => {
+    const out = subsetIaaInput(hybrid(), { ...none, labels: ["A"], noSpanLabels: true });
+    expect(out.labelset.labels).toEqual([]);
+  });
+
+  it("choosing None for both kinds leaves nothing to compute", () => {
+    const input = hybrid();
+    const out = subsetIaaInput(input, { ...none, noSpanLabels: true, noDocumentLabels: true });
+    expect(subsetProblem(input, out)).toMatch(/labels/);
+  });
+
   it("counts labels from both labelsets in the scope", () => {
     const input = hybrid();
     const scope = subsetScope(input, subsetIaaInput(input, { ...none, labels: ["A"], documentLabels: ["Relevant"] }));

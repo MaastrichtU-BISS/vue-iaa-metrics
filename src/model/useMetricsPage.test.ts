@@ -160,4 +160,19 @@ describe("useMetricsPage hybrid", () => {
     expect(page.hasFilters.value).toBe(true);
     expect(seen.at(-1)).toEqual(["Relevant"]);
   });
+
+  it('passes "None" to getAnnotations and counts it as a filter', async () => {
+    const fake = fakeSource();
+    const seen: { noSpanLabels?: boolean; noDocumentLabels?: boolean }[] = [];
+    fake.source.getAnnotations = async (filters) => {
+      seen.push({ noSpanLabels: filters.noSpanLabels, noDocumentLabels: filters.noDocumentLabels });
+      return [];
+    };
+    const page = useMetricsPage(fake.source, () => {});
+    await page.init();
+    page.noSpanLabels.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    expect(page.hasFilters.value).toBe(true);
+    expect(seen.at(-1)).toEqual({ noSpanLabels: true, noDocumentLabels: false });
+  });
 });

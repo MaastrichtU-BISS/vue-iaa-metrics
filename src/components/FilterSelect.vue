@@ -9,9 +9,13 @@ export type FilterOption = { value: string; label: string; color?: string };
 const props = defineProps<{
   options: FilterOption[];
   placeholder?: string;
+  /** Offers a "None" choice (shown first) when set, e.g. "None". Picking it
+   * clears the selection and turns `none` on; picking any option turns it off. */
+  noneLabel?: string;
 }>();
 
 const modelValue = defineModel<string[]>({ required: true });
+const none = defineModel<boolean>("none", { default: false });
 
 const open = ref(false);
 const query = ref("");
@@ -21,7 +25,13 @@ const filtered = computed(() =>
   props.options.filter((o) => o.label.toLowerCase().includes(query.value.toLowerCase())),
 );
 
+const toggleNone = () => {
+  none.value = !none.value;
+  if (none.value) modelValue.value = [];
+};
+
 const toggle = (value: string) => {
+  none.value = false;
   const set = new Set(modelValue.value);
   if (set.has(value)) set.delete(value);
   else set.add(value);
@@ -35,6 +45,7 @@ const selectedOption = computed(() =>
 );
 
 const summary = computed(() => {
+  if (none.value) return props.noneLabel ?? "None";
   if (!modelValue.value.length) return props.placeholder ?? "All";
   if (selectedOption.value) return selectedOption.value.label;
   return `${modelValue.value.length} items selected`;
@@ -53,7 +64,10 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
   <div ref="root" class="filter-select">
     <button type="button" class="filter-select__control" @click="open = !open">
       <span v-if="selectedOption?.color" class="filter-select__swatch" :style="{ background: selectedOption.color }" />
-      <span class="filter-select__summary" :class="{ 'filter-select__summary--placeholder': !modelValue.length }">
+      <span
+        class="filter-select__summary"
+        :class="{ 'filter-select__summary--placeholder': !modelValue.length && !none }"
+      >
         {{ summary }}
       </span>
       <span class="filter-select__caret" aria-hidden="true">▾</span>
@@ -61,6 +75,10 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
     <div v-if="open" class="filter-select__panel">
       <input v-model="query" type="text" class="filter-select__filter" placeholder="Filter…" />
       <ul class="filter-select__options">
+        <li v-if="noneLabel" class="filter-select__option filter-select__option--none" @click="toggleNone">
+          <input type="checkbox" :checked="none" @click.stop="toggleNone" />
+          <span class="filter-select__option-label">{{ noneLabel }}</span>
+        </li>
         <li
           v-for="o in filtered"
           :key="o.value"
@@ -157,6 +175,12 @@ onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
 }
 .filter-select__option:hover {
   background: rgba(0, 0, 0, 0.05);
+}
+.filter-select__option--none {
+  font-style: italic;
+  border-bottom: 1px solid var(--iaa-border, rgba(0, 0, 0, 0.15));
+  border-radius: 4px 4px 0 0;
+  margin-bottom: 0.2rem;
 }
 .filter-select__option-label {
   overflow: hidden;

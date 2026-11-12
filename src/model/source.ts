@@ -13,6 +13,12 @@ export type AnnotationFilters = {
   annotators: string[];
   /** Hybrid tasks only: the selected whole-document labels. Empty/absent means all. */
   documentLabels?: string[];
+  /** Hybrid tasks only: leave out span annotations altogether ("None" picked
+   * for the span labels). `labels` is then ignored. */
+  noSpanLabels?: boolean;
+  /** Hybrid tasks only: leave out document annotations altogether ("None"
+   * picked for the document labels). `documentLabels` is then ignored. */
+  noDocumentLabels?: boolean;
 };
 
 export type IaaParams = {

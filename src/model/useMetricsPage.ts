@@ -37,6 +37,9 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
 
   const selectedLabels = ref<string[]>([]);
   const selectedDocumentLabels = ref<string[]>([]);
+  // Hybrid tasks: "None" picked in a label filter drops that kind altogether.
+  const noSpanLabels = ref(false);
+  const noDocumentLabels = ref(false);
   const selectedDocuments = ref<string[]>([]);
   const selectedAnnotators = ref<string[]>([]);
 
@@ -52,13 +55,17 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     documents: selectedDocuments.value,
     annotators: selectedAnnotators.value,
     documentLabels: selectedDocumentLabels.value,
+    noSpanLabels: noSpanLabels.value,
+    noDocumentLabels: noDocumentLabels.value,
   }));
   const hasFilters = computed(
     () =>
       filters.value.labels.length +
         filters.value.documents.length +
         filters.value.annotators.length +
-        selectedDocumentLabels.value.length >
+        selectedDocumentLabels.value.length +
+        Number(noSpanLabels.value) +
+        Number(noDocumentLabels.value) >
       0,
   );
 
@@ -75,7 +82,10 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     }
   }
 
-  watch([selectedLabels, selectedDocumentLabels, selectedDocuments, selectedAnnotators], refreshAnnotations);
+  watch(
+    [selectedLabels, selectedDocumentLabels, noSpanLabels, noDocumentLabels, selectedDocuments, selectedAnnotators],
+    refreshAnnotations,
+  );
 
   // The whole-task IAA input. Fetched once on init (needed up front to know
   // whether this is a document-level task, for the granularity/criterion
@@ -190,6 +200,8 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     annotatorsOptions,
     selectedLabels,
     selectedDocumentLabels,
+    noSpanLabels,
+    noDocumentLabels,
     selectedDocuments,
     selectedAnnotators,
     hasFilters,

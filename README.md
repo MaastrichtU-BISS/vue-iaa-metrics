@@ -204,4 +204,7 @@ with its own labelset. Opt in through the data you return:
   offers a Span labels / Document labels switch; document labels get presence
   agreement (Krippendorff's α, Cohen's κ) and no span matching.
 
+- Hybrid cards in the annotation list carry a **SPAN** or **DOCUMENT** badge (document cards also have an indigo bar and tinted background; both can be restyled with the `--iaa-span`, `--iaa-document` and `--iaa-document-bg` CSS variables), and the list header counts each kind.
+- Both label filters offer a **None** choice (hybrid tasks only). It reaches the host as `filters.noSpanLabels` / `filters.noDocumentLabels`: `getAnnotations` must then leave that kind out, and the package leaves it (and its labelset) out of the IAA input too. With one kind on None the results show only the other kind, without the Span/Document switch.
+
 Existing span-level and document-level hosts need no changes.

@@ -29,6 +29,13 @@ watch(
 
 const visible = computed(() => props.annotations.slice(0, visibleCount.value));
 
+// Hybrid tasks mark every annotation with its kind; say how many of each.
+const kindCounts = computed(() => {
+  if (!props.annotations.some((a) => a.kind)) return undefined;
+  const documents = props.annotations.filter((a) => a.kind === "document").length;
+  return { documents, spans: props.annotations.length - documents };
+});
+
 // The sentinel only exists in the DOM once loading is false (it's behind the
 // v-else below), so it isn't there yet when onMounted runs the first time -
 // and it unmounts/remounts as a new element each time loading toggles back
@@ -79,6 +86,9 @@ const labelColor = (item: RichAnnotation) => {
     <template v-else>
       <div class="ann-list__count">
         Annotations: {{ annotations.length >= 10000 ? "more than 10000" : annotations.length }}
+        <span v-if="kindCounts" class="ann-list__kinds">
+          ({{ kindCounts.spans }} span · {{ kindCounts.documents }} document)
+        </span>
       </div>
       <template v-for="(item, index) in visible" :key="`${item.kind ?? '-'}_${item.ann_id}_${item.start}_${item.end}`">
         <button
@@ -140,6 +150,11 @@ const labelColor = (item: RichAnnotation) => {
 }
 .ann-list__doc-btn:hover {
   background: color-mix(in srgb, var(--iaa-accent, #1e4e79) 8%, transparent);
+}
+.ann-list__kinds {
+  font-weight: 400;
+  font-size: 0.85em;
+  color: var(--iaa-muted, #6b7280);
 }
 .ann-list__empty {
   text-align: center;

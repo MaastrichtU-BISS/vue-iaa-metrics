@@ -31,6 +31,8 @@ const {
   annotatorsOptions,
   selectedLabels,
   selectedDocumentLabels,
+  noSpanLabels,
+  noDocumentLabels,
   selectedDocuments,
   selectedAnnotators,
   hasFilters,
@@ -60,6 +62,8 @@ onMounted(() => init());
         <ParametersColumn
           v-model:selected-labels="selectedLabels"
           v-model:selected-document-labels="selectedDocumentLabels"
+          v-model:no-span-labels="noSpanLabels"
+          v-model:no-document-labels="noDocumentLabels"
           v-model:selected-documents="selectedDocuments"
           v-model:selected-annotators="selectedAnnotators"
           v-model:criterion="criterion"

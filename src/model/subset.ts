@@ -21,6 +21,9 @@ export function subsetIaaInput(input: IaaInputData, filters: AnnotationFilters):
   const documents = new Set(filters.documents);
   const annotators = new Set(filters.annotators);
   const documentLabels = new Set(filters.documentLabels ?? []);
+  // "None": that kind of annotation (and its labelset) is left out entirely.
+  const noSpans = !!filters.noSpanLabels;
+  const noDocuments = !!filters.noDocumentLabels;
 
   let docs = input.documents;
   if (documents.size) {
@@ -29,15 +32,17 @@ export function subsetIaaInput(input: IaaInputData, filters: AnnotationFilters):
     }
     docs = docs.filter((doc) => documents.has(doc.id!));
   }
-  if (annotators.size || labels.size || documentLabels.size) {
+  if (annotators.size || labels.size || documentLabels.size || noSpans || noDocuments) {
     docs = docs.map((doc) => ({
       ...doc,
       assignments: doc.assignments
         .filter((ass) => !annotators.size || annotators.has(ass.annotator))
         .map((ass) => {
           let next = ass;
-          if (labels.size) next = { ...next, annotations: next.annotations.filter((a) => labels.has(a.label)) };
-          if (documentLabels.size && next.document_annotations) {
+          if (noSpans) next = { ...next, annotations: [] };
+          else if (labels.size) next = { ...next, annotations: next.annotations.filter((a) => labels.has(a.label)) };
+          if (noDocuments && next.document_annotations) next = { ...next, document_annotations: [] };
+          else if (documentLabels.size && next.document_annotations) {
             next = {
               ...next,
               document_annotations: next.document_annotations.filter((a) => documentLabels.has(a.label)),
@@ -53,11 +58,19 @@ export function subsetIaaInput(input: IaaInputData, filters: AnnotationFilters):
 
   return {
     ...input,
-    labelset: labels.size
-      ? { labels: input.labelset.labels.filter((l) => labels.has(l.name)) }
-      : input.labelset,
-    ...(input.document_labelset && documentLabels.size
-      ? { document_labelset: { labels: input.document_labelset.labels.filter((l) => documentLabels.has(l.name)) } }
+    labelset: noSpans
+      ? { labels: [] }
+      : labels.size
+        ? { labels: input.labelset.labels.filter((l) => labels.has(l.name)) }
+        : input.labelset,
+    ...(input.document_labelset && (noDocuments || documentLabels.size)
+      ? {
+          document_labelset: {
+            labels: noDocuments
+              ? []
+              : input.document_labelset.labels.filter((l) => documentLabels.has(l.name)),
+          },
+        }
       : {}),
     documents: docs,
   };

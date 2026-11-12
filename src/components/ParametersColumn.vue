@@ -23,6 +23,9 @@ const emit = defineEmits<{ "compute-metrics": []; "download-all": [] }>();
 
 const selectedLabels = defineModel<string[]>("selectedLabels", { required: true });
 const selectedDocumentLabels = defineModel<string[]>("selectedDocumentLabels", { required: true });
+// Hybrid tasks: "None" for one kind leaves only the other kind of annotation.
+const noSpanLabels = defineModel<boolean>("noSpanLabels", { default: false });
+const noDocumentLabels = defineModel<boolean>("noDocumentLabels", { default: false });
 const selectedDocuments = defineModel<string[]>("selectedDocuments", { required: true });
 const selectedAnnotators = defineModel<string[]>("selectedAnnotators", { required: true });
 const criterion = defineModel<"exact" | "contained">("criterion", { required: true });
@@ -67,13 +70,21 @@ const wordToggle = computed({
       </h4>
       <div class="params__field">
         <label class="params__label">{{ hybrid ? "Span label(s)" : "Label(s)" }}</label>
-        <FilterSelect v-model="selectedLabels" :options="labelFilterOptions" placeholder="All" />
+        <FilterSelect
+          v-model="selectedLabels"
+          v-model:none="noSpanLabels"
+          :options="labelFilterOptions"
+          :none-label="hybrid ? 'None' : undefined"
+          placeholder="All"
+        />
       </div>
       <div v-if="hybrid" class="params__field">
         <label class="params__label">Document label(s)</label>
         <FilterSelect
           v-model="selectedDocumentLabels"
+          v-model:none="noDocumentLabels"
           :options="documentLabelFilterOptions"
+          none-label="None"
           placeholder="All"
         />
       </div>

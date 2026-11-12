@@ -22,7 +22,10 @@ const toggle = () => {
 </script>
 
 <template>
-  <div class="ann-card">
+  <div
+    class="ann-card"
+    :class="annotation.kind ? `ann-card--${annotation.kind}` : undefined"
+  >
     <div
       class="ann-card__header"
       :class="{ 'ann-card__header--clickable': clickable }"
@@ -32,6 +35,10 @@ const toggle = () => {
       @keydown.enter="toggle"
     >
       <template v-if="annotated">
+        <!-- Hybrid tasks: say which kind of annotation this is. -->
+        <span v-if="annotation.kind" class="ann-card__kind">
+          {{ annotation.kind === "document" ? "Document" : "Span" }}
+        </span>
         <LabelChip :label="{ name: annotation.label, color: labelColor }" />
         <span class="ann-card__meta">
           <span>{{ annotation.annotator }}</span>
@@ -54,6 +61,31 @@ const toggle = () => {
   border-radius: 8px;
   margin-bottom: 0.5rem;
   overflow: hidden;
+}
+.ann-card--span {
+  border-left: 4px solid var(--iaa-span, #94a3b8);
+}
+.ann-card--document {
+  border-left: 4px solid var(--iaa-document, #6366f1);
+  background: var(--iaa-document-bg, #f5f6ff);
+}
+.ann-card--document .ann-card__header {
+  background: transparent;
+}
+.ann-card__kind {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  color: #475569;
+  background: #e2e8f0;
+}
+.ann-card--document .ann-card__kind {
+  color: #3730a3;
+  background: #e0e7ff;
 }
 .ann-card__header {
   display: flex;
