@@ -141,3 +141,49 @@ describe("subsetScope", () => {
     });
   });
 });
+
+describe("hybrid tasks", () => {
+  function hybrid(): IaaInputData {
+    const ass = (annotator: string, spans: string[], docs: string[]): IaaAssignment => ({
+      ...assignment(annotator, spans),
+      document_annotations: docs.map((label) => ({ label })),
+    });
+    return {
+      annotation_level: "hybrid",
+      labelset: { labels: [{ name: "A" }, { name: "B" }] },
+      document_labelset: { labels: [{ name: "Relevant" }, { name: "A" }] },
+      documents: [
+        { id: "1", name: "d1", full_text: "one", assignments: [ass("alice", ["A", "B"], ["Relevant", "A"]), ass("bob", ["A"], ["A"])] },
+      ],
+    };
+  }
+
+  it("filters span labels without touching document labels", () => {
+    const out = subsetIaaInput(hybrid(), { ...none, labels: ["A"] });
+    expect(out.labelset.labels).toEqual([{ name: "A" }]);
+    expect(out.document_labelset!.labels).toHaveLength(2);
+    const alice = out.documents[0].assignments[0];
+    expect(alice.annotations.map((a) => a.label)).toEqual(["A"]);
+    expect(alice.document_annotations!.map((a) => a.label)).toEqual(["Relevant", "A"]);
+  });
+
+  it("filters document labels without touching span labels", () => {
+    const out = subsetIaaInput(hybrid(), { ...none, documentLabels: ["Relevant"] });
+    expect(out.labelset.labels).toHaveLength(2);
+    expect(out.document_labelset!.labels).toEqual([{ name: "Relevant" }]);
+    const alice = out.documents[0].assignments[0];
+    expect(alice.annotations).toHaveLength(2);
+    expect(alice.document_annotations!.map((a) => a.label)).toEqual(["Relevant"]);
+  });
+
+  it("keeps annotation_level and returns the input unchanged without filters", () => {
+    const input = hybrid();
+    expect(subsetIaaInput(input, none)).toEqual(input);
+  });
+
+  it("counts labels from both labelsets in the scope", () => {
+    const input = hybrid();
+    const scope = subsetScope(input, subsetIaaInput(input, { ...none, labels: ["A"], documentLabels: ["Relevant"] }));
+    expect(scope.labels).toEqual({ selected: 2, total: 4 });
+  });
+});

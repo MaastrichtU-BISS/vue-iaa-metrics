@@ -9,7 +9,16 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
-const labels = computed(() => Object.keys(props.report?.per_label ?? {}));
+// Hybrid reports carry two sets of results: span labels and whole-document
+// labels. Only one is shown at a time.
+const group = ref<"span" | "document">("span");
+const hasDocumentGroup = computed(() => !!props.report?.per_document_label);
+const isDocumentGroup = computed(() => group.value === "document" && hasDocumentGroup.value);
+const results = computed(() =>
+  isDocumentGroup.value ? props.report?.per_document_label : props.report?.per_label,
+);
+
+const labels = computed(() => Object.keys(results.value ?? {}));
 const selectedLabel = ref<string>();
 
 watch(
@@ -24,7 +33,7 @@ watch(
 
 const currentLabel = computed(() => {
   if (!selectedLabel.value) return undefined;
-  return props.report?.per_label[selectedLabel.value];
+  return results.value?.[selectedLabel.value];
 });
 
 const formatPairName = (pair: string): string =>
@@ -47,6 +56,26 @@ const formatOtherAnnotator = (pair: string, direction: string): string => {
   <div v-if="!loading" class="results-agreement">
     <div v-if="!labels.length" class="results-agreement__empty">No metrics computed yet.</div>
     <template v-else>
+      <div v-if="hasDocumentGroup" class="results-agreement__groups" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="results-agreement__group"
+          :class="{ 'results-agreement__group--active': !isDocumentGroup }"
+          @click="group = 'span'"
+        >
+          Span labels
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="results-agreement__group"
+          :class="{ 'results-agreement__group--active': isDocumentGroup }"
+          @click="group = 'document'"
+        >
+          Document labels
+        </button>
+      </div>
       <div class="results-agreement__picker">
         <label class="results-agreement__picker-label">Label</label>
         <select v-model="selectedLabel" class="results-agreement__select">
@@ -56,7 +85,10 @@ const formatOtherAnnotator = (pair: string, direction: string): string => {
 
       <div v-if="currentLabel" class="results-agreement__sections">
         <div>
-          <h4 class="results-agreement__heading">Coverage Agreement ({{ report!.meta.granularity }})</h4>
+          <h4 class="results-agreement__heading">
+            <template v-if="isDocumentGroup">Document Label Agreement</template>
+            <template v-else>Coverage Agreement ({{ report!.meta.granularity }})</template>
+          </h4>
           <table class="results-agreement__table">
             <thead>
               <tr>
@@ -78,10 +110,12 @@ const formatOtherAnnotator = (pair: string, direction: string): string => {
               </tr>
             </tbody>
           </table>
-          <p class="results-agreement__footnote">{{ report!.meta.notes.coverage_agreement }}</p>
+          <p class="results-agreement__footnote">
+            {{ isDocumentGroup ? report!.meta.notes.document_labels : report!.meta.notes.coverage_agreement }}
+          </p>
         </div>
 
-        <div>
+        <div v-if="!isDocumentGroup">
           <h4 class="results-agreement__heading">
             Span Matching ({{ report!.meta.criterion }})
             <span class="results-agreement__subtle">
@@ -134,6 +168,24 @@ const formatOtherAnnotator = (pair: string, direction: string): string => {
 }
 .results-agreement__picker-label {
   font-size: 0.85rem;
+  font-weight: 600;
+}
+.results-agreement__groups {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+.results-agreement__group {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--iaa-border, rgba(0, 0, 0, 0.15));
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+}
+.results-agreement__group--active {
+  background: rgba(0, 0, 0, 0.07);
   font-weight: 600;
 }
 .results-agreement__select {

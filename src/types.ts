@@ -9,10 +9,17 @@ export type IaaAnnotation = {
   text: string;
 };
 
+/** A label applied to a whole document. Hybrid tasks only. */
+export type IaaDocumentAnnotation = {
+  label: string;
+};
+
 export type IaaAssignment = {
   annotator: string;
   difficulty_rating: number;
   annotations: IaaAnnotation[];
+  /** Whole-document labels, from `document_labelset`. Hybrid tasks only. */
+  document_annotations?: IaaDocumentAnnotation[];
 };
 
 export type IaaDocument = {
@@ -29,10 +36,16 @@ export type IaaDocument = {
 };
 
 export type IaaInputData = {
+  /** The span labels (the only labels, unless the task is document-level). */
   labelset: { labels: { name: string }[] };
+  /** Hybrid tasks only: the whole-document labels. */
+  document_labelset?: { labels: { name: string }[] };
   documents: IaaDocument[];
-  /** Omitted for span-level tasks; "document" for whole-document tagging. */
-  annotation_level?: "document";
+  /**
+   * Omitted for span-level tasks; "document" for whole-document tagging;
+   * "hybrid" for tasks with both span annotations and document annotations.
+   */
+  annotation_level?: "document" | "hybrid";
 };
 
 // The IAA service's response shape.
@@ -83,6 +96,8 @@ export type IaaMeta = {
 export type IaaReport = {
   meta: IaaMeta;
   per_label: Record<string, LabelResult>;
+  /** Hybrid tasks only: agreement for the whole-document labels. */
+  per_document_label?: Record<string, LabelResult>;
 };
 
 export type DifficultyRatingSummary = {
@@ -113,6 +128,8 @@ export type RichAnnotation = {
   doc_name?: string;
   confidence: number;
   metadata?: string;
+  /** Hybrid tasks: whether this is a span or a whole-document annotation. Defaults to the task's level. */
+  kind?: "span" | "document";
 };
 
 export type LabelOption = { name: string; color: string };

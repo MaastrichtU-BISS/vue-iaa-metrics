@@ -26,9 +26,11 @@ const emit = defineEmits<{
 const {
   loading,
   labelsOptions,
+  documentLabelsOptions,
   documentsOptions,
   annotatorsOptions,
   selectedLabels,
+  selectedDocumentLabels,
   selectedDocuments,
   selectedAnnotators,
   hasFilters,
@@ -57,11 +59,13 @@ onMounted(() => init());
       <aside class="metrics-page__sidebar">
         <ParametersColumn
           v-model:selected-labels="selectedLabels"
+          v-model:selected-document-labels="selectedDocumentLabels"
           v-model:selected-documents="selectedDocuments"
           v-model:selected-annotators="selectedAnnotators"
           v-model:criterion="criterion"
           v-model:granularity="granularity"
           :labels-options="labelsOptions"
+          :document-labels-options="documentLabelsOptions"
           :documents-options="documentsOptions"
           :annotators-options="annotatorsOptions"
           :document-level="isDocumentLevel"
@@ -76,6 +80,7 @@ onMounted(() => init());
         <AnnotationsList
           :annotations="annotations"
           :labels="labelsOptions"
+          :document-labels="documentLabelsOptions"
           :loading="loading && !downloading"
           :document-level="isDocumentLevel"
           @open-document="(doc) => emit('open-document', doc)"

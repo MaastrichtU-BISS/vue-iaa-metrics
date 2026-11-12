@@ -10,6 +10,8 @@ import Spinner from "./Spinner.vue";
 const props = defineProps<{
   annotations: RichAnnotation[];
   labels: LabelOption[];
+  /** Hybrid tasks: colours for annotations whose `kind` is "document". */
+  documentLabels?: LabelOption[];
   loading: boolean;
   documentLevel: boolean;
 }>();
@@ -58,7 +60,15 @@ onBeforeUnmount(() => observer?.disconnect());
 const isNewDoc = (index: number) =>
   index === 0 || visible.value[index - 1].doc_id !== visible.value[index].doc_id;
 
-const labelColor = (label: string) => props.labels.find((l) => l.name === label)?.color ?? "gray";
+// In a hybrid task an annotation is a document annotation by its own kind,
+// whatever the task-wide level is.
+const isDocumentAnnotation = (item: RichAnnotation) =>
+  item.kind ? item.kind === "document" : props.documentLevel;
+
+const labelColor = (item: RichAnnotation) => {
+  const options = item.kind === "document" ? (props.documentLabels ?? []) : props.labels;
+  return options.find((l) => l.name === item.label)?.color ?? "gray";
+};
 </script>
 
 <template>
@@ -70,7 +80,7 @@ const labelColor = (label: string) => props.labels.find((l) => l.name === label)
       <div class="ann-list__count">
         Annotations: {{ annotations.length >= 10000 ? "more than 10000" : annotations.length }}
       </div>
-      <template v-for="(item, index) in visible" :key="`${item.ann_id}_${item.start}_${item.end}`">
+      <template v-for="(item, index) in visible" :key="`${item.kind ?? '-'}_${item.ann_id}_${item.start}_${item.end}`">
         <button
           v-if="isNewDoc(index)"
           type="button"
@@ -79,7 +89,11 @@ const labelColor = (label: string) => props.labels.find((l) => l.name === label)
         >
           {{ item.doc_name?.split(".")[0] ?? item.doc_id }}
         </button>
-        <AnnotationCard :annotation="item" :label-color="labelColor(item.label)" :document-level="documentLevel" />
+        <AnnotationCard
+          :annotation="item"
+          :label-color="labelColor(item)"
+          :document-level="isDocumentAnnotation(item)"
+        />
       </template>
       <div v-if="!annotations.length" class="ann-list__empty">No annotations match these filters.</div>
       <div ref="sentinel" class="ann-list__sentinel" />

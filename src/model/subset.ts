@@ -20,6 +20,7 @@ export function subsetIaaInput(input: IaaInputData, filters: AnnotationFilters):
   const labels = new Set(filters.labels);
   const documents = new Set(filters.documents);
   const annotators = new Set(filters.annotators);
+  const documentLabels = new Set(filters.documentLabels ?? []);
 
   let docs = input.documents;
   if (documents.size) {
@@ -28,14 +29,22 @@ export function subsetIaaInput(input: IaaInputData, filters: AnnotationFilters):
     }
     docs = docs.filter((doc) => documents.has(doc.id!));
   }
-  if (annotators.size || labels.size) {
+  if (annotators.size || labels.size || documentLabels.size) {
     docs = docs.map((doc) => ({
       ...doc,
       assignments: doc.assignments
         .filter((ass) => !annotators.size || annotators.has(ass.annotator))
-        .map((ass) =>
-          labels.size ? { ...ass, annotations: ass.annotations.filter((a) => labels.has(a.label)) } : ass,
-        ),
+        .map((ass) => {
+          let next = ass;
+          if (labels.size) next = { ...next, annotations: next.annotations.filter((a) => labels.has(a.label)) };
+          if (documentLabels.size && next.document_annotations) {
+            next = {
+              ...next,
+              document_annotations: next.document_annotations.filter((a) => documentLabels.has(a.label)),
+            };
+          }
+          return next;
+        }),
     }));
   }
   if (annotators.size) {
@@ -47,8 +56,16 @@ export function subsetIaaInput(input: IaaInputData, filters: AnnotationFilters):
     labelset: labels.size
       ? { labels: input.labelset.labels.filter((l) => labels.has(l.name)) }
       : input.labelset,
+    ...(input.document_labelset && documentLabels.size
+      ? { document_labelset: { labels: input.document_labelset.labels.filter((l) => documentLabels.has(l.name)) } }
+      : {}),
     documents: docs,
   };
+}
+
+/** How many labels the task offers across its span and document labelsets. */
+function countLabels(input: IaaInputData): number {
+  return input.labelset.labels.length + (input.document_labelset?.labels.length ?? 0);
 }
 
 function countAnnotators(input: IaaInputData): number {
@@ -67,7 +84,7 @@ export function subsetProblem(full: IaaInputData, subset: IaaInputData): string 
   if (subset.documents.length === 0) {
     return "No documents match the selected filters.";
   }
-  if (subset.labelset.labels.length === 0) {
+  if (countLabels(subset) === 0) {
     return "None of the selected labels are in the task's labelset.";
   }
   if (countAnnotators(subset) < 2 && countAnnotators(full) >= 2) {
@@ -87,6 +104,6 @@ export function subsetScope(full: IaaInputData, subset: IaaInputData): SubsetSco
   return {
     documents: { selected: subset.documents.length, total: full.documents.length },
     annotators: { selected: countAnnotators(subset), total: countAnnotators(full) },
-    labels: { selected: subset.labelset.labels.length, total: full.labelset.labels.length },
+    labels: { selected: countLabels(subset), total: countLabels(full) },
   };
 }

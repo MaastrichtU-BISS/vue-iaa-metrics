@@ -183,3 +183,25 @@ go run . --serve --port 8080
 pnpm test     # unit tests (vitest)
 pnpm build    # type-checks (vue-tsc) then builds dist/ in library mode
 ```
+
+---
+
+## Hybrid tasks (span + document labels)
+
+A task can have span annotations and whole-document annotations at once, each
+with its own labelset. Opt in through the data you return:
+
+- `getIaaInputData()` returns `annotation_level: "hybrid"`, `labelset` (span
+  labels), `document_labelset`, and per assignment both `annotations` and
+  `document_annotations: [{ label }]`.
+- Implement the optional `getDocumentLabels()` to return the document labelset
+  (with colours). A second "Document label(s)" filter then appears.
+- `getAnnotations(filters)` receives `filters.documentLabels` (absent or empty =
+  all). `filters.labels` narrows span labels only. Mark each returned
+  `RichAnnotation` with `kind: "span" | "document"`.
+- The IAA service ([`lawnotation-iaa`](../lawnotation-iaa)) answers with
+  `per_label` (span labels) and `per_document_label`. The results modal then
+  offers a Span labels / Document labels switch; document labels get presence
+  agreement (Krippendorff's α, Cohen's κ) and no span matching.
+
+Existing span-level and document-level hosts need no changes.

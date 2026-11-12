@@ -132,3 +132,32 @@ describe("useMetricsPage filtering", () => {
     expect(ctx.errors).toEqual(["No documents match the selected filters."]);
   });
 });
+
+describe("useMetricsPage hybrid", () => {
+  it("loads document labels and treats the task as hybrid", async () => {
+    const fake = fakeSource();
+    fake.source.getDocumentLabels = () => [{ name: "Relevant", color: "#000" }];
+    fake.source.getIaaInputData = async () => ({ ...task(), annotation_level: "hybrid" });
+    const page = useMetricsPage(fake.source, () => {});
+    await page.init();
+    expect(page.isHybrid.value).toBe(true);
+    expect(page.isDocumentLevel.value).toBe(false);
+    expect(page.documentLabelsOptions.value).toEqual([{ name: "Relevant", color: "#000" }]);
+  });
+
+  it("passes the selected document labels to getAnnotations and counts them as a filter", async () => {
+    const fake = fakeSource();
+    const seen: unknown[] = [];
+    fake.source.getAnnotations = async (filters) => {
+      seen.push(filters.documentLabels);
+      return [];
+    };
+    const page = useMetricsPage(fake.source, () => {});
+    await page.init();
+    expect(page.hasFilters.value).toBe(false);
+    page.selectedDocumentLabels.value = ["Relevant"];
+    await new Promise((r) => setTimeout(r, 0));
+    expect(page.hasFilters.value).toBe(true);
+    expect(seen.at(-1)).toEqual(["Relevant"]);
+  });
+});

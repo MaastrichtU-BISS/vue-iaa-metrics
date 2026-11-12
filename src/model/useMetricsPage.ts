@@ -30,10 +30,13 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
   );
 
   const labelsOptions = ref<LabelOption[]>([]);
+  // Hybrid tasks only; empty otherwise.
+  const documentLabelsOptions = ref<LabelOption[]>([]);
   const documentsOptions = ref<DocumentOption[]>([]);
   const annotatorsOptions = ref<string[]>([]);
 
   const selectedLabels = ref<string[]>([]);
+  const selectedDocumentLabels = ref<string[]>([]);
   const selectedDocuments = ref<string[]>([]);
   const selectedAnnotators = ref<string[]>([]);
 
@@ -48,9 +51,15 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     labels: selectedLabels.value,
     documents: selectedDocuments.value,
     annotators: selectedAnnotators.value,
+    documentLabels: selectedDocumentLabels.value,
   }));
   const hasFilters = computed(
-    () => filters.value.labels.length + filters.value.documents.length + filters.value.annotators.length > 0,
+    () =>
+      filters.value.labels.length +
+        filters.value.documents.length +
+        filters.value.annotators.length +
+        selectedDocumentLabels.value.length >
+      0,
   );
 
   const annotations = ref<RichAnnotation[]>([]);
@@ -66,13 +75,15 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
     }
   }
 
-  watch([selectedLabels, selectedDocuments, selectedAnnotators], refreshAnnotations);
+  watch([selectedLabels, selectedDocumentLabels, selectedDocuments, selectedAnnotators], refreshAnnotations);
 
   // The whole-task IAA input. Fetched once on init (needed up front to know
   // whether this is a document-level task, for the granularity/criterion
   // toggles) and reused for the rest of the session.
   const iaaInput = ref<IaaInputData>();
   const isDocumentLevel = computed(() => iaaInput.value?.annotation_level === "document");
+  // Both span and whole-document annotations, with a labelset for each.
+  const isHybrid = computed(() => iaaInput.value?.annotation_level === "hybrid");
 
   // Compute Metrics / Download apply the same filters as the list: the
   // cached input is narrowed in the browser, so the IAA service only ever
@@ -151,13 +162,15 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
   async function init() {
     loadingOptions.value = true;
     try {
-      const [labels, annotators, documents, input] = await Promise.all([
+      const [labels, documentLabels, annotators, documents, input] = await Promise.all([
         source.getLabels(),
+        source.getDocumentLabels?.() ?? [],
         source.getAnnotators(),
         source.getDocuments(),
         source.getIaaInputData(),
       ]);
       labelsOptions.value = labels;
+      documentLabelsOptions.value = documentLabels;
       annotatorsOptions.value = annotators;
       documentsOptions.value = documents;
       iaaInput.value = input;
@@ -172,15 +185,18 @@ export function useMetricsPage(source: MetricsSource, onError: (message: string)
   return {
     loading,
     labelsOptions,
+    documentLabelsOptions,
     documentsOptions,
     annotatorsOptions,
     selectedLabels,
+    selectedDocumentLabels,
     selectedDocuments,
     selectedAnnotators,
     hasFilters,
     criterion,
     granularity,
     isDocumentLevel,
+    isHybrid,
     annotations,
     loadingAnnotations,
     metricsModalVisible,

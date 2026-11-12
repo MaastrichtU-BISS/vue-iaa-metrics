@@ -7,9 +7,12 @@ import type {
 } from "../types";
 
 export type AnnotationFilters = {
+  /** Span labels (or the only labels, for non-hybrid tasks). */
   labels: string[];
   documents: string[];
   annotators: string[];
+  /** Hybrid tasks only: the selected whole-document labels. Empty/absent means all. */
+  documentLabels?: string[];
 };
 
 export type IaaParams = {
@@ -29,6 +32,8 @@ export type IaaParams = {
  */
 export interface MetricsSource {
   getLabels(): Promise<LabelOption[]> | LabelOption[];
+  /** Hybrid tasks only: the whole-document labelset. Omit for other tasks. */
+  getDocumentLabels?(): Promise<LabelOption[]> | LabelOption[];
   getAnnotators(): Promise<string[]> | string[];
   getDocuments(): Promise<DocumentOption[]> | DocumentOption[];
   /** The browsable, filtered annotation list for the right-hand panel. */

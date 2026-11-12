@@ -7,6 +7,8 @@ import InfoTooltip from "./InfoTooltip.vue";
 
 const props = defineProps<{
   labelsOptions: LabelOption[];
+  /** Hybrid tasks: the whole-document labelset, filtered separately from `labelsOptions`. */
+  documentLabelsOptions: LabelOption[];
   documentsOptions: DocumentOption[];
   annotatorsOptions: string[];
   /** Document-level tasks have no span text, so span-matching params don't apply. */
@@ -20,6 +22,7 @@ const props = defineProps<{
 const emit = defineEmits<{ "compute-metrics": []; "download-all": [] }>();
 
 const selectedLabels = defineModel<string[]>("selectedLabels", { required: true });
+const selectedDocumentLabels = defineModel<string[]>("selectedDocumentLabels", { required: true });
 const selectedDocuments = defineModel<string[]>("selectedDocuments", { required: true });
 const selectedAnnotators = defineModel<string[]>("selectedAnnotators", { required: true });
 const criterion = defineModel<"exact" | "contained">("criterion", { required: true });
@@ -28,6 +31,10 @@ const granularity = defineModel<"char" | "word">("granularity", { required: true
 const labelFilterOptions = computed(() =>
   props.labelsOptions.map((l) => ({ value: l.name, label: l.name, color: l.color })),
 );
+const documentLabelFilterOptions = computed(() =>
+  props.documentLabelsOptions.map((l) => ({ value: l.name, label: l.name, color: l.color })),
+);
+const hybrid = computed(() => props.documentLabelsOptions.length > 0);
 const documentFilterOptions = computed(() =>
   props.documentsOptions.map((d) => ({ value: d.value, label: d.label })),
 );
@@ -59,8 +66,16 @@ const wordToggle = computed({
         />
       </h4>
       <div class="params__field">
-        <label class="params__label">Label(s)</label>
+        <label class="params__label">{{ hybrid ? "Span label(s)" : "Label(s)" }}</label>
         <FilterSelect v-model="selectedLabels" :options="labelFilterOptions" placeholder="All" />
+      </div>
+      <div v-if="hybrid" class="params__field">
+        <label class="params__label">Document label(s)</label>
+        <FilterSelect
+          v-model="selectedDocumentLabels"
+          :options="documentLabelFilterOptions"
+          placeholder="All"
+        />
       </div>
       <div class="params__field">
         <label class="params__label">Document(s)</label>
